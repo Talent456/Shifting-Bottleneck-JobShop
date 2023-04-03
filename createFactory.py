@@ -1,0 +1,1 @@
+# Hier wird mithilfe der GUI oder der Excel Datei die Factory als nutzbares Objekt gebaut
