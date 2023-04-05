@@ -1,7 +1,10 @@
 class Factory:
     # Die Factory beinhaltet die Maschinen und die Aufträge für diesen Durchlauf
-    def __init__(self, machines, orders):
+    machines = 0
+    jobs = [[]]
+
+    def __init__(self, machines, jobs):
         self.machines = machines
-        self.orders = orders
+        self.jobs = jobs
 
 
