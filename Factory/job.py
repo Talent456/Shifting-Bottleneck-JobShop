@@ -6,4 +6,6 @@ class Job:
         self.machines = machines
         self.processingTime = processingTime
 
-
+    def calculateArrivalTime(self, job):
+        print("test")
+        # pro job die arrivaltime pro maschine ausrechnen

@@ -9,21 +9,25 @@ class Factory(nx.DiGraph):
         # Anfangsknoten
         self.add_node("0")
         #Endknoten
-        self.add_edge("*")
+        self.add_node("*")
         #critical path
         self.criticalPath = None
 
+#GEWICHT MUSS AN DEN NODE NICHT AN DIE EDGE
     def addJobtoFactory(self, job: Job):
         #job zur factory hinzufügen
-        for i in job.machines.__sizeof__-1:
+        i = 0
+        while i < len(job.machines):
             #Bei erstem Schritt eine Edge von startknoten bis zum ersten machen
             if(i == 0):
-                self.add_edge("0", job.machines[i] +","+ job.id, weight=job.processingTime[i])
+                self.add_edge("0", str(job.machines[i]) +"," + str(job.id), weight=job.processingTime[i])
+                i += 1
                 continue
             # für die 'normalen' knoten eine Edge von Schritt zu Schritt machen
-            self.add_edge(job.machines[i-1] +","+ job.id, job.machines[i] +","+ job.id, weight=job.processingTime[i])
+            self.add_edge(str(job.machines[i-1]) +","+ str(job.id), str(job.machines[i]) +","+ str(job.id), weight=job.processingTime[i])
+            i += 1
         #danach den letzten Schritt mit dem Endknoten verbinden
-        self.add_edge(job.machines[job.machines.__sizeof__-1] +","+ job.id, "*", weight=0)
+        self.add_edge(str(job.machines[i-1]) +","+ str(job.id), "*", weight=0)
             
 
     def createMachineSequence(self, maschineId):
