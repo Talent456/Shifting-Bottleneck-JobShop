@@ -3,8 +3,10 @@
 # dann auf die Factory das SB Verfahren benutzen mit applyShiftingBottleneck
 # Mit den Ergebnissen wird dann der VisualOutput erstellt
 
+from ast import List
 from Factory.factory import Factory
 from Factory.job import Job
+from Factory.Machine import Machine
 
 
 def createScheduling():
@@ -14,11 +16,12 @@ def createScheduling():
     jobs[2] = Job(3, [1,2,4], [4,7,3])
 
     js = Factory()
+    machines:List[Machine] = [None]
     i = 0
     while i < len(jobs):
         js.addJobtoFactory(jobs[i])
         i += 1
-    js.createMachineSequence(1)
+    js.createMachineGroupings(machines)
 
 
 createScheduling()
@@ -26,7 +29,7 @@ createScheduling()
 
 #Ablauf des Programms:
 #   Jobs einlesen und Graph erstellen -> Done
-#   Gesamtbearbeitungszeit aller Jobs herausfinden(job der am längsten braucht) Cakt
+#   Gesamtbearbeitungszeit aller Jobs herausfinden(job der am längsten braucht) Cakt, but why ????? erstmal weglassen
 #   Loop über alle Maschinen:
 #       Verspätung für alle Maschinen berechnen, pro job auf maschine rij= längster weg von anfang bis zu dem node; qij= längster weg von job bis *; pij= weight des jobs selber
 #           Diese werte pro job zusammenrechnen und den maximalwert nehmen. Dann die Maschine nehmen wo dieser wert am höchsten ist.
