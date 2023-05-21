@@ -11,9 +11,9 @@ from Factory.Machine import Machine
 
 def createScheduling():
     jobs = {}
-    jobs[0] = Job(1, [2,3,4], [10, 8, 4])
-    jobs[1] = Job(2, [2,1,4,3], [8,3,5,6])
-    jobs[2] = Job(3, [1,2,4], [4,7,3])
+    jobs[0] = Job(1, [2 ,3, 4, 5], [10, 8, 4, 20])
+    jobs[1] = Job(2, [2, 1, 4, 3], [8, 3, 5, 6])
+    jobs[2] = Job(3, [1, 2, 4], [20, 1, 2])
 
     js = Factory()
     machines:List[Machine] = [None]
@@ -22,6 +22,7 @@ def createScheduling():
         js.addJobtoFactory(jobs[i])
         i += 1
     js.createMachineGroupings(machines)
+    js.findMachineWithHighestDelay(machines)
 
 
 createScheduling()
