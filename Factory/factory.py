@@ -78,22 +78,32 @@ class Factory(nx.DiGraph):
                 
             i = i + 1
         return maxTupleMachine[0]
+    
+    def createAndAddSchedule(self, currentMachine):
+        jobs:List[(node, int)] = [] #tuple mit dem node und dem kürzestem path
+        newEdges = []
+        i = 0
+        while i < len(currentMachine.nodes):
+            node = currentMachine.nodes[i]
+            jobs.append((node, nx.shortest_path_length(self, '0', node, 'weight')))
+            i = i + 1
+        jobs.sort(key=lambda x: x[1])
+        j = 1 
+        while j < len(jobs):
+            nameCurrent = jobs[j][0]
+            namePrevious = jobs[j-1][0]
+            self.add_edge(namePrevious, nameCurrent,weight=0)
+            newEdges.append((namePrevious, nameCurrent))
 
-
-    #TODO: Wir haben also bisher den Graphen mit allen jobs drin sowie einer liste mit den jobs pro maschine.
-    # Nun müssen wir für jede Maschine die max. Verspätung ausrechnen. 
-    # Dies machen wir folgendermaßen:
-    #   Für jeden Job x jeder maschine rechnen wir aus:
-    #       longest path from start to x + longest path from x to end + weight x
-    #       dann den höchsten wert pro maschine speichern und alle anderen durchgehen.
-    #       die maschine mit dem höchsten single wert hat die höchste verspätung und wird angegangen.
-    #   im detail:
-    #   max map machine = 0,0    erste 0 steht für die maschine, zweite 0 steht für den delay  
-    #       iterieren über die indizes des machines list
-    #       max wert job = 0
-    #           iterieren über die jobs/knoten in der maschine
-    #               max wert job = max(calculateshit, maxwertjob)
-    #       if maxwert job größer als max map maschine value
-    #           then max map maschine = x,max wert job     x hier maschine
-    #   return am ende die maschine id aus der map
-        
+            j = j + 1
+        return newEdges
+    
+    def rescheduleMachine(self, scheduledMachine):
+        print("f")
+    
+    #TODO: Ein-Maschinen-Problem funktioniert soweit, jedoch ist der maxDelay iwie immer gleich, checken ob das richtig ist
+    
+    #   Rescheduling: Ich gehe meine "neue" Liste von bereits hinzugefügten Maschinen durch und muss diese anpassen.
+    #   Ich iteriere durch diese Liste:
+    #       Ich entferne die edges der maschine (aus dem graphen und der liste) und suche neu die kürzesten wege
+    #       füge die dann hinzu und packe die wieder in die liste
