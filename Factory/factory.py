@@ -75,7 +75,6 @@ class Factory(nx.DiGraph):
                 if maxDelayJob > maxTupleMachine[1]:
                     maxTupleMachine = (machines[i], maxDelayJob)
                 j = j + 1
-                
             i = i + 1
         return maxTupleMachine[0]
     
@@ -101,7 +100,7 @@ class Factory(nx.DiGraph):
     def rescheduleMachine(self, scheduledMachine):
         print("f")
     
-    #TODO: Ein-Maschinen-Problem funktioniert soweit, jedoch ist der maxDelay iwie immer gleich, checken ob das richtig ist
+    #TODO: Ein-Maschinen-Problem funktioniert soweit, einmal mit paar beispielen testen ???
     
     #   Rescheduling: Ich gehe meine "neue" Liste von bereits hinzugefügten Maschinen durch und muss diese anpassen.
     #   Ich iteriere durch diese Liste:
