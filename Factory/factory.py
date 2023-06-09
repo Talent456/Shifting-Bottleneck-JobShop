@@ -97,8 +97,13 @@ class Factory(nx.DiGraph):
             j = j + 1
         return newEdges
     
-    def rescheduleMachine(self, scheduledMachine):
-        print("f")
+    def rescheduleMachine(self, scheduledMachineAndEdges):
+        i = 0
+        while i < len(scheduledMachineAndEdges[1]):
+            self.remove_edge(scheduledMachineAndEdges[1][i][0], scheduledMachineAndEdges[1][i][1])
+            i = i + 1
+        scheduledMachineAndEdges = (scheduledMachineAndEdges[0], self.createAndAddSchedule(scheduledMachineAndEdges[0]))
+
     
     #TODO: Ein-Maschinen-Problem funktioniert soweit, einmal mit paar beispielen testen ???
     

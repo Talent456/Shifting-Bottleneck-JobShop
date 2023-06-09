@@ -8,6 +8,7 @@ import string
 from Factory.factory import Factory
 from Factory.job import Job
 from Factory.Machine import Machine
+import networkx as nx
 
 
 def createScheduling():
@@ -37,7 +38,7 @@ def createScheduling():
         scheduledMachinesAndEdges.append((currentMachine, newEdges))
         j = j + 1
         machines.remove(currentMachine)
-    print(j)
+    print(js.edges)
 
     
 
@@ -60,5 +61,5 @@ createScheduling()
 #       Rescheduling: durch die Maschinen aus dem "Fertigpool" iterieren -> den schedule entfernen und neuen schedule mit den neuen edges
 #       DONE!
 
-#   Probleme: Wie gehen wir mit negativen zyklen um ? Ersetze bellman-ford durch algo der das kann ODER negative zyklen vermeiden bei der anlage (kp wie das aussehen soll) 
+#   Probleme: Wie gehen wir mit negativen zyklen um ? Ersetze bellman-ford durch algo der das kann(gibt es nicht) ODER negative zyklen vermeiden bei der anlage (kp wie das aussehen soll) 
 
