@@ -13,9 +13,12 @@ import networkx as nx
 
 def createScheduling():
     jobs = {}
-    jobs[0] = Job(1, [2 ,3, 4, 5], [10, 8, 4, 20])
-    jobs[1] = Job(2, [2, 1, 4, 3], [8, 3, 5, 6])
-    jobs[2] = Job(3, [1, 2, 4], [20, 1, 2])
+    jobs[0] = Job(1, [1, 3, 5, 2, 3], [1, 4, 7, 12, 3])
+    jobs[1] = Job(2, [5, 1, 3, 2], [20, 2, 4, 5])
+    jobs[2] = Job(3, [1, 3, 4], [14, 9, 8])
+    jobs[3] = Job(4, [1, 5, 2, 3, 1, 5, 4], [2, 4, 6, 6, 2, 13, 1])
+    jobs[4] = Job(5, [1, 2, 3, 4, 5], [10, 7, 5, 3, 1])
+
 
     js = Factory()
     machines:List[Machine] = [None]
@@ -33,7 +36,7 @@ def createScheduling():
         newEdges = js.createAndAddSchedule(currentMachine)
         k = 0
         while k < len(scheduledMachinesAndEdges):
-            js.rescheduleMachine(scheduledMachinesAndEdges[k]) 
+            scheduledMachinesAndEdges[k] = js.rescheduleMachine(scheduledMachinesAndEdges[k]) 
             k = k + 1
         scheduledMachinesAndEdges.append((currentMachine, newEdges))
         j = j + 1

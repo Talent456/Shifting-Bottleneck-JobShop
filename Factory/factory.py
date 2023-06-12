@@ -10,9 +10,9 @@ class Factory(nx.DiGraph):
     def __init__(self):
         super().__init__()
         # Anfangsknoten
-        self.add_node("0")
+        self.add_node("0", weight="0")
         #Endknoten
-        self.add_node("*")
+        self.add_node("*", weight="0")
         #critical path
         self.criticalPath = None
 
@@ -52,11 +52,27 @@ class Factory(nx.DiGraph):
     def func(self, u, v):
         return self.nodes[u]['weight']
     
-    def calculateJobDelay(self, job: Job):
+    def calculateJobDelayOld(self, job: Job):
         invWeightGraph = self.inverseWeight()
         r = nx.bellman_ford_path_length(invWeightGraph, '0', job, 'weight') * -1
         q = nx.bellman_ford_path_length(invWeightGraph, job, '*', 'weight') * -1
         return r + q
+    
+    def calculateJobDelay(self, job: Job):
+        r = 0
+        for path in nx.all_simple_paths(self, '0', job):
+            weight_r = 0
+            for node in path:
+                weight_r = weight_r + int(self.nodes[node]['weight'])
+            r = max (r, weight_r)
+        q = 0
+        for path in nx.all_simple_paths(self, job, '*'):
+            weight_q = 0
+            for node in path:
+                weight_q = weight_q + int(self.nodes[node]['weight'])
+            q = max (q, weight_q)
+        return r + q - int(self.nodes[job]['weight'])
+        
     
     def inverseWeight(self):
         invGraph = self.copy()
@@ -102,7 +118,7 @@ class Factory(nx.DiGraph):
         while i < len(scheduledMachineAndEdges[1]):
             self.remove_edge(scheduledMachineAndEdges[1][i][0], scheduledMachineAndEdges[1][i][1])
             i = i + 1
-        scheduledMachineAndEdges = (scheduledMachineAndEdges[0], self.createAndAddSchedule(scheduledMachineAndEdges[0]))
+        return (scheduledMachineAndEdges[0], self.createAndAddSchedule(scheduledMachineAndEdges[0]))
 
     
     #TODO: Ein-Maschinen-Problem funktioniert soweit, einmal mit paar beispielen testen ???
