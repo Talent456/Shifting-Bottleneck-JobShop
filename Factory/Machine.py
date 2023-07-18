@@ -13,6 +13,3 @@ class Machine:
     
     def getId(self):
         return self.id
-    
-    def addNodes(self, node):
-        self.nodes.append(node)

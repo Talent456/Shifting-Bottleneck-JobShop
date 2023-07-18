@@ -9,30 +9,30 @@ from Factory.factory import Factory
 from Factory.job import Job
 from Factory.Machine import Machine
 import networkx as nx
+from timeit import default_timer as timer
 
 
 def createScheduling():
     jobs = {}
     jobs[0] = Job(1, [1, 3, 5, 2, 3], [1, 4, 7, 12, 3])
-    jobs[1] = Job(2, [5, 1, 3, 2], [20, 2, 4, 5])
-    jobs[2] = Job(3, [1, 3, 4], [14, 9, 8])
-    jobs[3] = Job(4, [1, 5, 2, 3, 1, 5, 4], [2, 4, 6, 6, 2, 13, 1])
-    jobs[4] = Job(5, [1, 2, 3, 4, 5], [10, 7, 5, 3, 1])
+    jobs[1] = Job(2, [5, 1, 3, 2, 4], [20, 2, 4, 5, 9])
 
-
+    start = 0
+    end = 0
+    start = timer()
     js = Factory()
-    machines:List[Machine] = [None]
     scheduledMachinesAndEdges:List[(Machine, [])] = []
     i = 0
     while i < len(jobs):
-        js.addJobtoFactory(jobs[i])
+        js.addJobToFactory(jobs[i])
         i += 1
-    js.createMachineGroupings(machines)
+    js.createMachineGroupings()
     j = 1
     currentMachine = None
-    machineCount = len(machines)
+    machineCount = len(js.machines)
     while j < machineCount:
-        currentMachine = js.findMachineWithHighestDelay(machines)
+        print(j)
+        currentMachine = js.findMachineWithHighestDelay()
         newEdges = js.createAndAddSchedule(currentMachine)
         k = 0
         while k < len(scheduledMachinesAndEdges):
@@ -40,8 +40,13 @@ def createScheduling():
             k = k + 1
         scheduledMachinesAndEdges.append((currentMachine, newEdges))
         j = j + 1
-        machines.remove(currentMachine)
-    print(js.edges)
+        js.machines.remove(currentMachine)
+    end = timer()
+    print(end - start)
+    k = 0
+    while k < len(scheduledMachinesAndEdges):
+        print(scheduledMachinesAndEdges[k][0].id,  scheduledMachinesAndEdges[k][1])
+        k = k + 1
 
     
 

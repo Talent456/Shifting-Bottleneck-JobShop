@@ -4,6 +4,9 @@ import networkx as nx
 from Factory.job import Job
 from Factory.Machine import Machine
 import matplotlib.pyplot as plt
+import re
+import concurrent.futures
+from timeit import default_timer as timer
 
 class Factory(nx.DiGraph):
 
@@ -13,15 +16,25 @@ class Factory(nx.DiGraph):
         self.add_node("0", weight="0")
         #Endknoten
         self.add_node("*", weight="0")
-        #critical path
-        self.criticalPath = None
+        #Maschinen
+        self.machines:List[Machine] = [None]
 
-    def addJobtoFactory(self, job: Job):
+    def addJobToFactory(self, job: Job):
         #job zur factory hinzufügen
         i = 0
+        nameCurrent = ''
+        namePrevious = ''
         while i < len(job.machines):
-            nameCurrent = str(job.machines[i]) +"," + str(job.id)
-            namePrevious = str(job.machines[i-1]) +","+ str(job.id)
+            namePrevious = nameCurrent
+            nameCurrent = str(job.id) + ',' + str(job.machines[i]) + '(1)'
+            if(self.nodes.__contains__ (nameCurrent)):
+                j = 2
+                while True:
+                    nameCurrent = str(job.id) + ',' + str(job.machines[i]) + '(' + str(j) + ')'
+                    if(not(self.nodes.__contains__(nameCurrent))):
+                        break
+                    else:
+                        j = j + 1
             self.add_node(nameCurrent, weight=job.processingTime[i])
             #Bei erstem Schritt eine Edge von startknoten bis zum ersten machen
             if(i == 0):
@@ -35,29 +48,50 @@ class Factory(nx.DiGraph):
         self.add_edge(nameCurrent, "*", weight=0)
             
 
-    def createMachineGroupings(self, machine):
+    def createMachineGroupings(self):
         temp= []
+        #erstmal alle Knoten nach Bezeichnung aufsteigend sortieren
         for nodes in self.nodes():
             if(nodes != '0' and nodes != '*'):
                 temp.append(nodes)
         temp.sort()
 
+        i = 0
+        count = 0
+        #die jobs mit mehrstelliger id werden nicht richtig sortiert
+        #deshalb werden diese removed und danach wieder appended damit sie am Ende sind  
+        while count < len(temp):
+            if(temp[i][1] != ','):
+                tempjob = temp[i]
+                temp.remove(temp[i])
+                temp.append(tempjob)
+            else:
+                i = i + 1
+            count = count + 1
+
+        #Hier wird die Liste der Maschinen anhand des letzten jobs auf die richtige Länge gestellt
+        lastJob = temp[len(temp)-1]
+        indexCommaLast = lastJob.find(',')
+        indexBracketLast = lastJob.find('(')
+        lastMachine = lastJob[indexCommaLast+1:indexBracketLast]
+        j = 1
+        while j <= int(lastMachine):
+            self.machines.append(None)
+            j = j + 1
+
+        #Die einzelnen Jobsteps werden der richtigen Maschine zugeordnet
         for job in temp:
-            machineIndex = int(job[0])
-            if len(machine)-1 < machineIndex:
-                machine.append(Machine(machineIndex, []))
-            machine[machineIndex].addNodes(job)
-        print("holy shit it actually works! xdd") 
-             
-    def func(self, u, v):
-        return self.nodes[u]['weight']
-    
-    def calculateJobDelayOld(self, job: Job):
-        invWeightGraph = self.inverseWeight()
-        r = nx.bellman_ford_path_length(invWeightGraph, '0', job, 'weight') * -1
-        q = nx.bellman_ford_path_length(invWeightGraph, job, '*', 'weight') * -1
-        return r + q
-    
+            indexComa = job.find(',')
+            indexBracket = job.find('(')
+            numbersMaschine = list(range(indexComa + 1, indexBracket))
+            machine = ''
+            for index in numbersMaschine:
+                machine = machine + (job[index])
+            if self.machines[int(machine)] == None:
+                self.machines[int(machine)] = (Machine(int(machine), []))
+            self.machines[int(machine)].nodes.append(job)
+
+    #Es werden alle simplen pfade gesucht, die gewichtung berechnet und der längste genommen
     def calculateJobDelay(self, job: Job):
         r = 0
         for path in nx.all_simple_paths(self, '0', job):
@@ -72,28 +106,22 @@ class Factory(nx.DiGraph):
                 weight_q = weight_q + int(self.nodes[node]['weight'])
             q = max (q, weight_q)
         return r + q - int(self.nodes[job]['weight'])
-        
     
-    def inverseWeight(self):
-        invGraph = self.copy()
-        for edge in invGraph.edges:
-            invGraph.edges[edge]['weight'] = invGraph.edges[edge]['weight'] * -1
-        return invGraph
-
-    def findMachineWithHighestDelay(self, machines):
-        maxTupleMachine = (machines[1], 0)
+    #findet die Maschine mit den höchsten Delay und gibt diese zurück
+    def findMachineWithHighestDelay(self):
+        maxTupleMachine = (self.machines[1], 0)
         i = 1
-        while i < len(machines):
+        while i < len(self.machines):
             maxDelayJob = 0
             j = 0
-            while j < len(machines[i].nodes):
-                maxDelayJob = max(maxDelayJob, self.calculateJobDelay(machines[i].nodes[j]))
+            while j < len(self.machines[i].nodes):
+                maxDelayJob = max(maxDelayJob, self.calculateJobDelay(self.machines[i].nodes[j]))
                 if maxDelayJob > maxTupleMachine[1]:
-                    maxTupleMachine = (machines[i], maxDelayJob)
+                    maxTupleMachine = (self.machines[i], maxDelayJob)
                 j = j + 1
             i = i + 1
         return maxTupleMachine[0]
-    
+
     def createAndAddSchedule(self, currentMachine):
         jobs:List[(node, int)] = [] #tuple mit dem node und dem kürzestem path
         newEdges = []
@@ -102,6 +130,8 @@ class Factory(nx.DiGraph):
             node = currentMachine.nodes[i]
             jobs.append((node, nx.shortest_path_length(self, '0', node, 'weight')))
             i = i + 1
+        #Die Jobs werden anhand ihrer shortest pathes, also ihrer frühsten fertigstellung
+        #aufsteigend sortiert und dann die kanten dazu erstellt
         jobs.sort(key=lambda x: x[1])
         j = 1 
         while j < len(jobs):
@@ -113,6 +143,7 @@ class Factory(nx.DiGraph):
             j = j + 1
         return newEdges
     
+    #Es werden erst die alten Kanten entfernt und dann eine neue, konfliktfreie reihenfolge gefunden
     def rescheduleMachine(self, scheduledMachineAndEdges):
         i = 0
         while i < len(scheduledMachineAndEdges[1]):
@@ -120,10 +151,33 @@ class Factory(nx.DiGraph):
             i = i + 1
         return (scheduledMachineAndEdges[0], self.createAndAddSchedule(scheduledMachineAndEdges[0]))
 
+
+############Alte/Falsche Lösungen###########
+
+
+    def threadMethod(self, machine, node, delays):
+        delays.append([machine, self.calculateJobDelay(node)])
     
-    #TODO: Ein-Maschinen-Problem funktioniert soweit, einmal mit paar beispielen testen ???
+    def findMachineWithHighestDelayAttempt(self, machines):
+        delays:List[(Machine, int)] = []
+        i = 1
+        while i < len(machines):
+            if(__name__ == '__main__'):
+                executor = concurrent.futures.ProcessPoolExecutor(len(machines[i].nodes))
+                futures = [executor.submit(self.threadMethod ,self , machines[i], node, delays) for node in machines[i].nodes]
+                concurrent.futures.wait(futures)
+            i = i + 1
+        return max(delays, key=lambda item: item[1])[0]
     
-    #   Rescheduling: Ich gehe meine "neue" Liste von bereits hinzugefügten Maschinen durch und muss diese anpassen.
-    #   Ich iteriere durch diese Liste:
-    #       Ich entferne die edges der maschine (aus dem graphen und der liste) und suche neu die kürzesten wege
-    #       füge die dann hinzu und packe die wieder in die liste
+    #nicht nutzbar da keine negativen zyklen verarbeitbar sind
+    def calculateJobDelayOld(self, job: Job):
+        invWeightGraph = self.inverseWeight()
+        r = nx.bellman_ford_path_length(invWeightGraph, '0', job, 'weight') * -1
+        q = nx.bellman_ford_path_length(invWeightGraph, job, '*', 'weight') * -1
+        return r + q
+    
+    def inverseWeight(self):
+        invGraph = self.copy()
+        for edge in invGraph.edges:
+            invGraph.edges[edge]['weight'] = invGraph.edges[edge]['weight'] * -1
+        return invGraph
