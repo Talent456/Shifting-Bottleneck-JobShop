@@ -27,6 +27,8 @@ class Factory(nx.DiGraph):
         while i < len(job.machines):
             namePrevious = nameCurrent
             nameCurrent = str(job.id) + ',' + str(job.machines[i]) + '(1)'
+            #j ist nach der Schleife die Anzahl der Jobsteps die bereits auf der gleichen Machine
+            #des aktuellen jobs gelaufen sind, inklusive des aktuellen jobs 
             if(self.nodes.__contains__ (nameCurrent)):
                 j = 2
                 while True:
@@ -50,46 +52,31 @@ class Factory(nx.DiGraph):
 
     def createMachineGroupings(self):
         temp= []
-        #erstmal alle Knoten nach Bezeichnung aufsteigend sortieren
+        #erstmal alle Knoten ohne Start und Endknoten in eine Liste packen
         for nodes in self.nodes():
             if(nodes != '0' and nodes != '*'):
                 temp.append(nodes)
-        temp.sort()
-
-        i = 0
-        count = 0
-        #die jobs mit mehrstelliger id werden nicht richtig sortiert
-        #deshalb werden diese removed und danach wieder appended damit sie am Ende sind  
-        while count < len(temp):
-            if(temp[i][1] != ','):
-                tempjob = temp[i]
-                temp.remove(temp[i])
-                temp.append(tempjob)
-            else:
-                i = i + 1
-            count = count + 1
 
         #Hier wird die Liste der Maschinen anhand des letzten jobs auf die richtige Länge gestellt
-        lastJob = temp[len(temp)-1]
-        indexCommaLast = lastJob.find(',')
-        indexBracketLast = lastJob.find('(')
-        lastMachine = lastJob[indexCommaLast+1:indexBracketLast]
-        j = 1
-        while j <= int(lastMachine):
-            self.machines.append(None)
+        maxMachine = 0
+        j = 0
+        while j < len(temp):
+            currentMachine = int(temp[j].split(',')[1].split('(')[0])
+            if(currentMachine > maxMachine):
+                maxMachine = currentMachine
             j = j + 1
 
+        k = 1
+        while k <= maxMachine:
+            self.machines.append(None)
+            k = k + 1
+
         #Die einzelnen Jobsteps werden der richtigen Maschine zugeordnet
-        for job in temp:
-            indexComa = job.find(',')
-            indexBracket = job.find('(')
-            numbersMaschine = list(range(indexComa + 1, indexBracket))
-            machine = ''
-            for index in numbersMaschine:
-                machine = machine + (job[index])
-            if self.machines[int(machine)] == None:
-                self.machines[int(machine)] = (Machine(int(machine), []))
-            self.machines[int(machine)].nodes.append(job)
+        for jobStep in temp:
+            machine = int(jobStep.split(',')[1].split('(')[0])
+            if self.machines[machine] == None:
+                self.machines[machine] = (Machine(machine, []))
+            self.machines[machine].nodes.append(jobStep)
 
     #Es werden alle simplen pfade gesucht, die gewichtung berechnet und der längste genommen
     def calculateJobDelay(self, job: Job):
