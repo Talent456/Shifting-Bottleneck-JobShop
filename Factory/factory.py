@@ -110,12 +110,18 @@ class Factory(nx.DiGraph):
         return maxTupleMachine[0]
 
     def createAndAddSchedule(self, currentMachine):
-        jobs:List[(node, int)] = [] #tuple mit dem node und dem kürzestem path
+        jobs:List[(node, int)] = [] #tuple mit dem node und der max verspätung!!!!
         newEdges = []
         i = 0
+        r = 0
         while i < len(currentMachine.nodes):
             node = currentMachine.nodes[i]
-            jobs.append((node, nx.shortest_path_length(self, '0', node, 'weight')))
+            for path in nx.all_simple_paths(self, '0', node):
+                weight_r = 0
+                for nodes in path:
+                    weight_r = weight_r + int(self.nodes[nodes]['weight'])
+                r = max (r, weight_r) - int(self.nodes[node]['weight'])
+            jobs.append((node, r))
             i = i + 1
         #Die Jobs werden anhand ihrer shortest pathes, also ihrer frühsten fertigstellung
         #aufsteigend sortiert und dann die kanten dazu erstellt
