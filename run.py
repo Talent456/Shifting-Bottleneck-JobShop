@@ -4,9 +4,9 @@
 # Mit den Ergebnissen wird dann der VisualOutput erstellt
 
 from ast import List
-import string
+import Output.createVisualOutput as output
 from Factory.factory import Factory
-from Factory.job import Job
+from Factory.Job import Job
 from Factory.Machine import Machine
 import networkx as nx
 from timeit import default_timer as timer
@@ -29,6 +29,7 @@ def createScheduling():
     while i < len(jobs):
         js.addJobToFactory(jobs[i])
         i += 1
+    graphForOutput = js.copy()
     js.createMachineGroupings()
     j = 1
     currentMachine = None
@@ -46,10 +47,9 @@ def createScheduling():
         js.machines.remove(currentMachine)
     end = timer()
     print(end - start)
-    k = 0
-    while k < len(scheduledMachinesAndEdges):
-        print(scheduledMachinesAndEdges[k][0].id,  scheduledMachinesAndEdges[k][1])
-        k = k + 1
+
+    output.createVisualOutput(graphForOutput, scheduledMachinesAndEdges)
+
 
     
 

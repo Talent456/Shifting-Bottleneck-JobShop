@@ -1,7 +1,7 @@
 from ast import List
 import networkx as nx
 
-from Factory.job import Job
+from Factory.Job import Job
 from Factory.Machine import Machine
 import matplotlib.pyplot as plt
 import re
