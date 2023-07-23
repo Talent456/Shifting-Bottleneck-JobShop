@@ -1,5 +1,5 @@
 class NodeSchedule:
-    # jeder Schedule einen nodes hat den node als string und die bisherige bearbeitungszeit
+    # jeder Schedule hat den node als string und den fertigstellungszeitpunkt
 
     def __init__(self, id, time):
         self.id = id
