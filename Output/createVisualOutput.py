@@ -47,7 +47,14 @@ def createVisualOutput(unscheduledFactory, scheduledMachinesAndEdges):
         while o < len(scheduledMachinesAndEdgesCopy[n][0].nodes):
             current = NodeSchedule.findNodeSchedule(scheduledMachinesAndEdgesCopy[n][0].nodes[o], schedule)
             start = current.time - int(unscheduledFactory.nodes[current.id]['weight'])
-            output = output + " Jobstep: " +current.id+ " Von: " +str(start)+ " Bis: " +str(current.time) + " || "
+            row = " Jobstep: " +current.id+ " Von: " +str(start)+ " Bis: " +str(current.time)
+            spaces = 34 - len(row)
+            while spaces > 0:
+                row = row + " "
+                spaces = spaces - 1
+            row = row + "||"
+            output = output + row
             o = o + 1
+
         print(output)
         n = n + 1
