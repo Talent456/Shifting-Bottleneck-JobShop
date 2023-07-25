@@ -5,56 +5,55 @@ from Factory.Machine import Machine
 from Output.NodeSchedule import NodeSchedule
 import networkx as nx
 from ast import List
-import re
 import copy
+
+def printOutput(schedule, unscheduledFactory):
+    i = 0
+    id = schedule[i].id.split(',')[1].split('(')[0]
+    row = ""
+    while i < len(schedule):
+        if (id != schedule[i].id.split(',')[1].split('(')[0]):
+            output = "Maschine: " + schedule[i-1].id.split(',')[1].split('(')[0] + row
+            print(output)
+            id = schedule[i].id.split(',')[1].split('(')[0]
+            row = ""
+
+        start = schedule[i].time - int(unscheduledFactory.nodes[schedule[i].id]['weight'])
+        row = row + " Jobstep: " +schedule[i].id+ " Von: " +str(start)+ " Bis: " +str(schedule[i].time)
+        spaces = 36 - len(row)
+        while spaces > 0:
+            row = row + " "
+            spaces = spaces - 1
+        row = row + "||"
+        i = i + 1
+    
+    output = "Maschine: " + schedule[i-1].id.split(',')[1].split('(')[0] + row
+    print(output)
+
 
 def createVisualOutput(unscheduledFactory, scheduledMachinesAndEdges):
 
     scheduledMachinesAndEdgesCopy = copy.deepcopy(scheduledMachinesAndEdges)
     schedule:List[NodeSchedule] = []
-    i = 0
+    i = 1
     while i < len(scheduledMachinesAndEdges):
         j = 0
-        while j < len(scheduledMachinesAndEdges[i][1]):
-            currentNode = scheduledMachinesAndEdges[i][1][j][0]
+        while j < len(scheduledMachinesAndEdges[i][0]):
+            currentNode = scheduledMachinesAndEdges[i][0][j][0]
             schedule.append(NodeSchedule(currentNode, 0))
             j = j + 1
-        schedule.append(NodeSchedule(scheduledMachinesAndEdges[i][1][j-1][1], 0))
         i = i + 1 
 
-    while len(scheduledMachinesAndEdges) > 0:
-        l = 0
+    while len(scheduledMachinesAndEdges) > 1:
+        l = 1
         while l < len(scheduledMachinesAndEdges):
-            flag = False
-            current = scheduledMachinesAndEdges[l][1][0][0]
-            currentTime = NodeSchedule.findNodeSchedule(current, schedule).time
-            if(len(scheduledMachinesAndEdges[l][1]) == 1 and currentTime != 0):
-                    current = scheduledMachinesAndEdges[l][1][0][1]
-                    flag = True
+            current = scheduledMachinesAndEdges[l][0][0][0]
             currentTime = NodeSchedule.calculateTime(current, unscheduledFactory, scheduledMachinesAndEdgesCopy, schedule)
-            if(currentTime != None):
+            if(currentTime !=  None):
                 NodeSchedule.findNodeSchedule(current, schedule).time = currentTime
-                if(len(scheduledMachinesAndEdges[l][1]) != 1):
-                    scheduledMachinesAndEdges[l][1].remove(scheduledMachinesAndEdges[l][1][0])
-                if(flag):
-                    scheduledMachinesAndEdges.remove(scheduledMachinesAndEdges[l])
+                del scheduledMachinesAndEdges[l][0][0]
+                if(len(scheduledMachinesAndEdges[l][0]) == 0):
+                   scheduledMachinesAndEdges.remove(scheduledMachinesAndEdges[l])
             l = l + 1
 
-    n = 0
-    while n < len(scheduledMachinesAndEdgesCopy):
-        o = 0
-        output = "Maschine: " + str(scheduledMachinesAndEdgesCopy[n][0].id)
-        while o < len(scheduledMachinesAndEdgesCopy[n][0].nodes):
-            current = NodeSchedule.findNodeSchedule(scheduledMachinesAndEdgesCopy[n][0].nodes[o], schedule)
-            start = current.time - int(unscheduledFactory.nodes[current.id]['weight'])
-            row = " Jobstep: " +current.id+ " Von: " +str(start)+ " Bis: " +str(current.time)
-            spaces = 34 - len(row)
-            while spaces > 0:
-                row = row + " "
-                spaces = spaces - 1
-            row = row + "||"
-            output = output + row
-            o = o + 1
-
-        print(output)
-        n = n + 1
+    printOutput(schedule, unscheduledFactory)

@@ -79,49 +79,130 @@ class Factory(nx.DiGraph):
             self.machines[machine].nodes.append(jobStep)
 
     #Es werden alle simplen pfade gesucht, die gewichtung berechnet und der längste genommen
-    def calculateJobDelay(self, job: Job):
+    def calculateJobParams(self, job: Job, cutout):
         r = 0
-        for path in nx.all_simple_paths(self, '0', job):
+        for path in nx.all_simple_paths(self, '0', job, cutout):
             weight_r = 0
             for node in path:
                 weight_r = weight_r + int(self.nodes[node]['weight'])
             r = max (r, weight_r)
         q = 0
-        for path in nx.all_simple_paths(self, job, '*'):
+        for path in nx.all_simple_paths(self, job, '*', cutout):
             weight_q = 0
             for node in path:
                 weight_q = weight_q + int(self.nodes[node]['weight'])
             q = max (q, weight_q)
-        return r + q - int(self.nodes[job]['weight'])
+        return (job, r, q, int(self.nodes[job]['weight']))
     
     #findet die Maschine mit den höchsten Delay und gibt diese zurück
-    def findMachineWithHighestDelay(self):
+    def findMachineWithHighestDelay(self, cutout):
+        maxSchedules:List[([], int, Machine)] = []
+        i = 1
+        while i < len(self.machines):
+            params = []
+            j = 0
+            while j < len(self.machines[i].nodes):
+                job = self.machines[i].nodes[j]
+                params.append(self.calculateJobParams(job, cutout))
+                j = j + 1
+            maxSchedules.append(self.createSchedule(params, self.machines[i]))
+            i = i + 1
+        maxSchedules.sort(key=lambda a: a[1])
+        return maxSchedules[len(maxSchedules)-1]
+    
+    def createSchedule(self, params, machineId):
+        params.sort(key=lambda a: a[1])
+        schedule:List[("", int, int)] = []
+        schedule.append((params[0][0], params[0][1], params[0][3]))
+        i = 1 
+        headtailmax = 0
+        while i < len(params):
+            start = max(params[i][1], schedule[i-1][2])
+            schedule.append((params[i][0], start, start + params[i][3]))
+            headtailmax = max(headtailmax, params[i][1] + params[i][2] + params[i][3])
+            i = i + 1
+
+        completiontime = max(headtailmax, schedule[i-1][2])
+        return (schedule, completiontime, machineId)
+    
+    def addSchedule(self, schedule):
+        i = 0
+        newEdges = []
+        while i < len(schedule[0]):
+            j = i + 1
+            nameCurrent = schedule[0][i][0]
+            while j < len(schedule[0]):
+
+                nameNext = schedule[0][j][0]
+                self.add_edge(nameCurrent, nameNext,weight=0)
+                newEdges.append((nameCurrent, nameNext))
+                j = j + 1
+            i = i + 1
+        return newEdges
+    
+    def addScheduleMyWay(self, schedule):
+        i = 0
+        newEdges = []
+        while i < len(schedule[0])-1:
+            j = i + 1
+            nameCurrent = schedule[0][i][0]
+            nameNext = nameNext = schedule[0][j][0]
+            self.add_edge(nameCurrent, nameNext,weight=0)
+            newEdges.append((nameCurrent, nameNext))
+            i = i + 1
+        return newEdges
+    
+    #Es werden erst die alten Kanten entfernt und dann eine neue, konfliktfreie reihenfolge gefunden
+    def rescheduleMachine(self, scheduledMachineAndEdges, initialGraph, cutout):
+        i = 0
+        while i < len(scheduledMachineAndEdges[1]):
+            begin = scheduledMachineAndEdges[1][i][0]
+            end = scheduledMachineAndEdges[1][i][1]
+            if(not(initialGraph.has_edge(begin, end))):
+                self.remove_edge(begin, end)
+            i = i + 1
+        params = []
+        j = 0
+        while j < len(scheduledMachineAndEdges[0].nodes):
+            job = scheduledMachineAndEdges[0].nodes[j]
+            params.append(self.calculateJobParams(job, cutout))
+            j = j + 1
+        schedule = self.createSchedule(params, scheduledMachineAndEdges[0].id)
+        newEdges = self.addSchedule(schedule)
+        return [(scheduledMachineAndEdges[0], newEdges), schedule[0]]
+
+
+############Alte/Falsche Lösungen###########
+
+    #findet die Maschine mit den höchsten Delay und gibt diese zurück
+    def findMachineWithHighestDelayold(self, cutout):
         maxTupleMachine = (self.machines[1], 0)
         i = 1
         while i < len(self.machines):
             maxDelayJob = 0
             j = 0
             while j < len(self.machines[i].nodes):
-                maxDelayJob = max(maxDelayJob, self.calculateJobDelay(self.machines[i].nodes[j]))
+                maxDelayJob = max(maxDelayJob, self.calculateJobDelay(self.machines[i].nodes[j], cutout))
                 if maxDelayJob > maxTupleMachine[1]:
                     maxTupleMachine = (self.machines[i], maxDelayJob)
                 j = j + 1
             i = i + 1
         return maxTupleMachine[0]
 
-    def createAndAddSchedule(self, currentMachine):
-        jobs:List[(node, int)] = [] #tuple mit dem node und der max verspätung!!!!
+    def createAndAddScheduleOld(self, currentMachine, cutout):
+        jobs:List[(node, int)] = [] #tuple mit dem node und der längsten completion time
         newEdges = []
         i = 0
         r = 0
         while i < len(currentMachine.nodes):
             node = currentMachine.nodes[i]
-            for path in nx.all_simple_paths(self, '0', node):
+            for path in nx.all_simple_paths(self, '0', node, cutout):
                 weight_r = 0
                 for nodes in path:
                     weight_r = weight_r + int(self.nodes[nodes]['weight'])
-                r = max (r, weight_r) - int(self.nodes[node]['weight'])
+                r = max (r, weight_r)
             jobs.append((node, r))
+            r = 0
             i = i + 1
         #Die Jobs werden anhand ihrer shortest pathes, also ihrer frühsten fertigstellung
         #aufsteigend sortiert und dann die kanten dazu erstellt
@@ -135,17 +216,6 @@ class Factory(nx.DiGraph):
 
             j = j + 1
         return newEdges
-    
-    #Es werden erst die alten Kanten entfernt und dann eine neue, konfliktfreie reihenfolge gefunden
-    def rescheduleMachine(self, scheduledMachineAndEdges):
-        i = 0
-        while i < len(scheduledMachineAndEdges[1]):
-            self.remove_edge(scheduledMachineAndEdges[1][i][0], scheduledMachineAndEdges[1][i][1])
-            i = i + 1
-        return (scheduledMachineAndEdges[0], self.createAndAddSchedule(scheduledMachineAndEdges[0]))
-
-
-############Alte/Falsche Lösungen###########
 
 
     def threadMethod(self, machine, node, delays):
