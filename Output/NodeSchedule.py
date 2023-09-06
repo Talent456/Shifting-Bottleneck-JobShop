@@ -36,7 +36,6 @@ class NodeSchedule:
     def calculateTime(current, unscheduledFactory, scheduledMachinesAndEdgesCopy, schedule):
         #Job kann '0' sein, dann 
         currentJobPred = NodeSchedule.getJobPred(unscheduledFactory, current)
-        currentMachinePred = NodeSchedule.getMachinePred(current, scheduledMachinesAndEdgesCopy)
 
         if(currentJobPred == '0'):
             currentJobPredTime = 0

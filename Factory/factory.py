@@ -79,23 +79,24 @@ class Factory(nx.DiGraph):
             self.machines[machine].nodes.append(jobStep)
 
     #Es werden alle simplen pfade gesucht, die gewichtung berechnet und der längste genommen
-    def calculateJobParams(self, job: Job, cutout):
+    def calculateJobParams(self, job: Job):
         r = 0
-        for path in nx.all_simple_paths(self, '0', job, cutout):
+        for path in nx.all_simple_paths(self, '0', job):
             weight_r = 0
             for node in path:
                 weight_r = weight_r + int(self.nodes[node]['weight'])
             r = max (r, weight_r)
         q = 0
-        for path in nx.all_simple_paths(self, job, '*', cutout):
+        for path in nx.all_simple_paths(self, job, '*'):
             weight_q = 0
             for node in path:
                 weight_q = weight_q + int(self.nodes[node]['weight'])
             q = max (q, weight_q)
-        return (job, r, q, int(self.nodes[job]['weight']))
+        jobWeight = int(self.nodes[job]['weight'])
+        return (job, r - jobWeight, q - jobWeight, jobWeight)
     
     #findet die Maschine mit den höchsten Delay und gibt diese zurück
-    def findMachineWithHighestDelay(self, cutout):
+    def findMachineWithHighestDelay(self):
         maxSchedules:List[([], int, Machine)] = []
         i = 1
         while i < len(self.machines):
@@ -103,7 +104,7 @@ class Factory(nx.DiGraph):
             j = 0
             while j < len(self.machines[i].nodes):
                 job = self.machines[i].nodes[j]
-                params.append(self.calculateJobParams(job, cutout))
+                params.append(self.calculateJobParams(job))
                 j = j + 1
             maxSchedules.append(self.createSchedule(params, self.machines[i]))
             i = i + 1
@@ -115,15 +116,20 @@ class Factory(nx.DiGraph):
         schedule:List[("", int, int)] = []
         schedule.append((params[0][0], params[0][1], params[0][3]))
         i = 1 
-        headtailmax = 0
         while i < len(params):
             start = max(params[i][1], schedule[i-1][2])
             schedule.append((params[i][0], start, start + params[i][3]))
-            headtailmax = max(headtailmax, params[i][1] + params[i][2] + params[i][3])
             i = i + 1
+        
+        scheduleDuration = schedule[i-1][2]
+        headtailmax = 0
+        j = 0
+        while j < len(schedule):
+            headtailmax = max(headtailmax, params[j][2] - (scheduleDuration - schedule[j][2]))
+            j = j + 1
 
-        completiontime = max(headtailmax, schedule[i-1][2])
-        return (schedule, completiontime, machineId)
+        completionTime = scheduleDuration + headtailmax
+        return (schedule, completionTime, machineId)
     
     def addSchedule(self, schedule):
         i = 0
@@ -153,7 +159,7 @@ class Factory(nx.DiGraph):
         return newEdges
     
     #Es werden erst die alten Kanten entfernt und dann eine neue, konfliktfreie reihenfolge gefunden
-    def rescheduleMachine(self, scheduledMachineAndEdges, initialGraph, cutout):
+    def rescheduleMachine(self, scheduledMachineAndEdges, initialGraph):
         i = 0
         while i < len(scheduledMachineAndEdges[1]):
             begin = scheduledMachineAndEdges[1][i][0]
@@ -165,7 +171,7 @@ class Factory(nx.DiGraph):
         j = 0
         while j < len(scheduledMachineAndEdges[0].nodes):
             job = scheduledMachineAndEdges[0].nodes[j]
-            params.append(self.calculateJobParams(job, cutout))
+            params.append(self.calculateJobParams(job))
             j = j + 1
         schedule = self.createSchedule(params, scheduledMachineAndEdges[0].id)
         newEdges = self.addSchedule(schedule)

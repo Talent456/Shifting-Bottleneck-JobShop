@@ -28,7 +28,13 @@ def printOutput(schedule, unscheduledFactory):
         i = i + 1
     
     output = "Maschine: " + schedule[i-1].id.split(',')[1].split('(')[0] + row
+    j = 0
+    duration = 0
+    while j < len(schedule):
+        duration = max(duration, schedule[j].time)
+        j = j + 1
     print(output)
+    print("Die Gesamtbearbeitungszeit dieses Schedules beträgt: " +str(duration)+ " Zeiteinheiten")
 
 
 def createVisualOutput(unscheduledFactory, scheduledMachinesAndEdges):

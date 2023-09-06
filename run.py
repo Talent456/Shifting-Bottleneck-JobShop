@@ -15,17 +15,11 @@ import copy
 
 def createScheduling():
     jobs = {}
-    jobs[0] = Job(1, [1, 2, 3, 4, 5], [2, 8, 7, 4, 12])
-    jobs[1] = Job(2, [5, 1, 2, 4, 3], [9, 1, 16, 2, 1])
-    jobs[2] = Job(3, [3, 2, 3, 4, 3], [9, 1, 15, 2, 1])
-    jobs[3] = Job(4, [1, 2, 3, 1, 3], [5, 2, 7, 2, 6])
-    jobs[4] = Job(5, [2, 5, 5, 4, 5], [13, 7, 1, 6, 3])
-    jobs[5] = Job(6, [1, 1, 3, 4, 2], [6, 2, 15, 8, 2])
-    jobs[6] = Job(7, [4, 1, 3, 2, 1], [10, 3, 5, 2, 7])
-    jobs[7] = Job(8, [4, 2, 3, 3, 5], [5, 11, 1, 8, 1])
-    jobs[8] = Job(9, [5, 2, 2, 1, 5], [10, 8, 6, 4, 2])
-    jobs[9] = Job(10, [3, 3, 1, 2, 5], [7, 2, 4, 3, 2])
-    jobs[10] = Job(11, [3, 4, 5, 5, 1], [1, 6, 11, 2, 13])
+    jobs[0] = Job(1, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], [12, 5, 7, 3, 3, 8, 10, 4, 3, 2, 9, 5, 1, 1, 5])	
+    jobs[1] = Job(2, [11, 5, 4, 12, 3, 6, 7, 15, 12, 13, 14, 5, 2, 13, 9], [4, 11, 5, 1, 1, 5, 9, 2, 3, 4, 1, 8, 3, 3, 7])	
+
+    
+
 
 
 
@@ -43,7 +37,6 @@ def createScheduling():
     j = 1
     currentMachine = None
     machineCount = len(js.machines)
-    cutout = len(jobs) + machineCount
     scheduleForOutput:List[(Machine, [])] = []
     i = 0
     while i < machineCount:
@@ -51,13 +44,13 @@ def createScheduling():
         i = i + 1
     while j < machineCount:
         print(j)
-        maxCompletionSchedule = js.findMachineWithHighestDelay(cutout)
+        maxCompletionSchedule = js.findMachineWithHighestDelay()
         currentMachine = maxCompletionSchedule[2]
         scheduleForOutput[currentMachine.id] = (maxCompletionSchedule[0], currentMachine)
-        newEdges = js.addScheduleMyWay(maxCompletionSchedule)
+        newEdges = js.addSchedule(maxCompletionSchedule)
         k = 0
         while k < len(scheduledMachinesAndEdges):
-            reschedule = js.rescheduleMachine(scheduledMachinesAndEdges[k], initialGraph, cutout)
+            reschedule = js.rescheduleMachine(scheduledMachinesAndEdges[k], initialGraph)
             scheduledMachinesAndEdges[k] = reschedule[0]
             scheduleForOutput[scheduledMachinesAndEdges[k][0].id] = (reschedule[1], scheduledMachinesAndEdges[k][0])
             k = k + 1
